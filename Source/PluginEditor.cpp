@@ -37,6 +37,7 @@ std::optional<IzraTuneEditor::Resource> IzraTuneEditor::getResource (const juce:
 {
     const auto path = url == "/" ? juce::String ("index.html") : url.fromFirstOccurrenceOf ("/", false, false);
     if (path == "index.html")        return Resource { toBytes (BinaryData::index_html, BinaryData::index_htmlSize), "text/html" };
+    if (path == "app.js")            return Resource { toBytes (BinaryData::app_js, BinaryData::app_jsSize), "text/javascript" };
     if (path == "juce_frontend.js")  return Resource { toBytes (BinaryData::juce_frontend_js, BinaryData::juce_frontend_jsSize), "text/javascript" };
     return std::nullopt;
 }
