@@ -1,0 +1,26 @@
+name: Build IzraTune VST3
+on: [push, workflow_dispatch]
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build --config Release --target IzraTune_VST3 --parallel
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IzraTune-VST3-Windows
+          path: build/IzraTune_artefacts/Release/VST3/IzraTune.vst3
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+      - run: cmake --build build --config Release --target IzraTune_VST3 --parallel
+      - run: |
+          cd build/IzraTune_artefacts/Release/VST3 || cd build/IzraTune_artefacts/VST3
+          ditto -c -k --keepParent IzraTune.vst3 "$GITHUB_WORKSPACE/IzraTune-macOS.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IzraTune-VST3-macOS
+          path: IzraTune-macOS.zip
