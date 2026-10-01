@@ -13,6 +13,7 @@ configure_file(${JUCE_JS} ${CMAKE_BINARY_DIR}/ui_gen/juce_frontend.js COPYONLY)
 
 juce_add_binary_data(IzraTuneUI SOURCES
     ui/index.html
+    ui/app.js
     ${CMAKE_BINARY_DIR}/ui_gen/juce_frontend.js)
 
 juce_add_plugin(IzraTune
