@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>IzraTune</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--alu:#1d1e20;--alu2:#2a2b2e;--ink:#d9dde2;--dim:#8a9099;--cyan:#6fe9f0;--cyan-d:#0b2f38;--lcd:#06222a}
+*{box-sizing:border-box;margin:0;user-select:none;-webkit-user-select:none}
+html,body{width:1068px;height:546px;overflow:hidden;background:#111;font-family:"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink)}
+#app{position:relative;width:1068px;height:546px;overflow:hidden}
+.abs{position:absolute;transform:translate(-50%,-50%)}
+.lab{position:absolute;transform:translate(-50%,-50%);text-align:center;font-size:19px;letter-spacing:.02em;white-space:nowrap;color:#e6e9ee}
+.val{font-size:17px;color:#cfd3d9}.sub{font-size:15px;color:var(--dim)}.small{font-size:16px;color:#aeb4bc}
+
+/* brand bar — SSL-console-inspired heavy grotesque */
+#title{position:absolute;inset:0 0 auto 0;height:38px;background:linear-gradient(#fbfbfb,#e4e5e7);border-bottom:1px solid #9a9ca0;
+ text-align:center;font:900 31px/38px "Helvetica Neue",Helvetica,"Arial Black",Arial,sans-serif;letter-spacing:.045em;color:#1b1b1d}
+#presets{position:absolute;top:38px;left:0;right:0;height:44px;background:linear-gradient(#2b2c2f,#202124);border-bottom:2px solid #0d0d0e;
+ display:flex;align-items:center;font-size:19px;color:#b9bec6}
+#presets>*{position:absolute}
+.btn{background:linear-gradient(#34353a,#27282b);border:1px solid #0c0c0d;border-radius:5px;color:#c6cad1;font-size:18px;padding:5px 16px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.btn.on{color:var(--cyan);box-shadow:inset 0 0 8px rgba(111,233,240,.25)}
+select{appearance:none;-webkit-appearance:none;background:#1a1b1d;border:1px solid #0c0c0d;border-radius:5px;color:#c6cad1;font-size:18px;text-align:center;text-align-last:center;padding:5px 30px;width:310px}
+
+/* matte brushed aluminium */
+#panel{position:absolute;top:82px;left:0;right:0;bottom:0;
+ background:
+  linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,0) 30%,rgba(0,0,0,.25)),
+  url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.004 0.85' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 -.18'/></filter><rect width='100%' height='100%' filter='url(%23b)' opacity='.55'/></svg>"),
+  var(--alu);
+ box-shadow:inset 0 0 60px rgba(0,0,0,.55)}
+
+/* knobs */
+.knob{width:96px;height:96px;cursor:ns-resize;touch-action:none}
+.knob svg{width:100%;height:100%;overflow:visible}
+
+/* step buttons */
+.step{width:104px;height:140px;border-radius:12px;border:2px solid #0b0b0c;cursor:pointer;
+ background:radial-gradient(120% 90% at 50% 12%,#3b3c40,#232427 70%);
+ box-shadow:inset 0 2px 0 rgba(255,255,255,.08),inset 0 -8px 14px rgba(0,0,0,.5),0 0 0 6px #17181a,0 3px 8px rgba(0,0,0,.6);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.step:active{transform:translate(-50%,-50%) translateY(2px);box-shadow:inset 0 6px 14px rgba(0,0,0,.7),0 0 0 6px #17181a}
+.step i{width:0;height:0;border-left:19px solid transparent;border-right:19px solid transparent;filter:drop-shadow(0 0 7px #3ab6ff)}
+.step i.d{border-top:34px solid #4cc2ff}.step i.u{border-bottom:34px solid #4cc2ff;margin-top:12px}
+.step span{font-size:18px;color:#a6dcff;height:20px;margin-bottom:-4px}
+.leds{display:flex;gap:11px}.leds b{width:11px;height:11px;border-radius:50%;background:#2b2d31;box-shadow:inset 0 1px 2px #000}
+.leds b.on{background:#fff;box-shadow:0 0 6px 2px rgba(255,255,255,.55)}
+#phase{width:90px;height:50px;border-radius:9px;border:2px solid #0b0b0c;cursor:pointer;color:#4cc2ff;font-size:30px;
+ background:linear-gradient(#34353a,#222326);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 4px #17181a;display:flex;align-items:center;justify-content:center;text-shadow:0 0 8px #3ab6ff}
+#phase:not(.on){color:#4a5560;text-shadow:none}
+
+/* LED display */
+#bezel{width:362px;height:235px;border-radius:14px;background:linear-gradient(#0e0f11,#18191b);border:2px solid #08080a;
+ box-shadow:inset 0 0 14px #000,0 0 0 2px #303236,0 2px 0 3px #3b3d41}
+#lcd{position:absolute;left:40px;top:57px;width:282px;height:157px;border-radius:7px;
+ background:radial-gradient(110% 100% at 50% 40%,#0c3a45,var(--lcd) 75%);box-shadow:inset 0 0 22px rgba(0,0,0,.8),0 0 14px rgba(40,200,220,.18);overflow:hidden;cursor:ns-resize}
+#lcd:before,#lcd:after,#lcd i:before,#lcd i:after{content:"";position:absolute;width:13px;height:13px;border:2px solid #7fd8de;opacity:.8}
+#lcd:before{left:8px;top:8px;border-right:0;border-bottom:0}#lcd:after{right:8px;top:8px;border-left:0;border-bottom:0}
+#lcd i:before{left:8px;bottom:8px;border-right:0;border-top:0}#lcd i:after{right:8px;bottom:8px;border-left:0;border-top:0}
+#num{position:absolute;inset:0 0 30px 0;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--cyan);
+ font:400 82px/1 "SF Pro Rounded","Nunito","Varela Round","Segoe UI",system-ui,sans-serif;text-shadow:0 0 18px rgba(111,233,240,.65)}
+#num small{font-size:44px;margin-top:20px}
+#lcd p{position:absolute;bottom:13px;width:100%;text-align:center;color:#76dfe6;font-size:19px;letter-spacing:.02em}
+#meters{position:absolute;left:0;right:0;top:15px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:17px;color:#d3d7dd}
+#meters div{display:grid;grid-template-columns:repeat(16,9px);gap:2px;row-gap:3px}
+#meters s{height:4px;background:#2a2d31;border-radius:1px;display:block}#meters s.on{background:#e8f6f8;box-shadow:0 0 4px rgba(255,255,255,.5)}
+.side{position:absolute;top:57px;width:4px;height:157px;border-radius:2px;background:#1c1e21}
+.side u{position:absolute;left:0;right:0;border-radius:2px;background:#fff;box-shadow:0 0 6px #fff}
+#pitchlab{font-size:34px;letter-spacing:.06em;color:#e4e7ec}
+</style></head>
+<body><div id="app">
+ <div id="title">IZRATUNE</div>
+ <div id="presets">
+  <span style="left:24px;color:#b9bec6">Preset</span>
+  <span id="prev" style="left:316px;cursor:pointer;font-size:22px">&lsaquo;</span>
+  <select id="preset" style="left:340px"></select>
+  <button class="btn" id="midi" style="left:662px">MIDI Learn</button>
+  <button class="btn" id="reset" style="left:934px">Reset</button>
+  <button class="btn" id="gear" title="Settings" style="left:1022px;padding:5px 9px">&#9881;</button>
+ </div>
+ <div id="panel"></div>
+</div>
+<script type="module">
+const P = document.getElementById('panel'), $ = (h) => { const t = document.createElement('div'); t.innerHTML = h.trim(); return t.firstChild; };
+const put = (el, x, y) => { el.style.left = x + 'px'; el.style.top = (y - 82) + 'px'; P.appendChild(el); return el; };
+const lab = (t, x, y, c = '') => put($(`<div class="lab ${c}">${t}</div>`), x, y);
+
+/* ---------- JUCE bridge (with a mock so the page previews in a normal browser) ---------- */
+const hasJuce = !!window.__JUCE__;
+const Juce = hasJuce ? await import('./juce_frontend.js') : null;
+const mockS = (a, b, d) => { let v = (d - a) / (b - a); const l = []; return { properties: { start: a, end: b }, getNormalisedValue: () => v,
+  setNormalisedValue: x => { v = x; l.forEach(f => f()); }, sliderDragStarted() {}, sliderDragEnded() {}, valueChangedEvent: { addListener: f => l.push(f) } }; };
+const mockT = () => { let v = false; const l = []; return { getValue: () => v, setValue: x => { v = x; l.forEach(f => f()); }, valueChangedEvent: { addListener: f => l.push(f) } }; };
+const defs = { pitch: [-12, 12, 0], inGain: [-24, 24, 0], outTrim: [-24, 24, 0], outGain: [-24, 24, 0], tone: [0, 1, 1] };
+const S = {}; for (const k in defs) S[k] = hasJuce ? Juce.getSliderState(k) : mockS(...defs[k]);
+const PH = hasJuce ? Juce.getToggleState('phase') : mockT();
+const rng = k => { const p = S[k].properties; return [p.start ?? defs[k][0], p.end ?? defs[k][1]]; };
+const get = k => { const [a, b] = rng(k); return a + S[k].getNormalisedValue() * (b - a); };
+const set = (k, v) => { const [a, b] = rng(k); S[k].sliderDragStarted(); S[k].setNormalisedValue(Math.min(1, Math.max(0, (v - a) / (b - a)))); S[k].sliderDragEnded(); };
+const fire = [];  const on = f => { fire.push(f); f(); };
+for (const k in S) S[k].valueChangedEvent.addListener(() => fire.forEach(f => f()));
+
+/* ---------- knobs ---------- */
+const db = v => (Math.abs(v) < 0.05 ? '0dB' : v.toFixed(1) + 'dB');
+const arcPt = (a, r) => [48 + r * Math.sin(a * Math.PI / 180), 48 - r * Math.cos(a * Math.PI / 180)];
+function knob(key, x, y, fmt) {
+  const el = put($(`<div class="knob abs"><svg viewBox="0 0 96 96">
+    <defs><radialGradient id="g${key}" cx="50%" cy="30%" r="80%"><stop offset="0" stop-color="#4a4b50"/><stop offset=".6" stop-color="#232427"/><stop offset="1" stop-color="#121214"/></radialGradient></defs>
+    <path d="M${arcPt(-135, 41)} A41 41 0 1 1 ${arcPt(135, 41)}" fill="none" stroke="#0d0d0f" stroke-width="5" stroke-linecap="round"/>
+    <path class="arc" fill="none" stroke="#f1f3f6" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="48" cy="48" r="31" fill="url(#g${key})" stroke="#000" stroke-width="2"/>
+    <circle cx="48" cy="48" r="26" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
+    <line class="ptr" x1="48" y1="27" x2="48" y2="38" stroke="#f1f3f6" stroke-width="3" stroke-linecap="round"/></svg></div>`), x, y);
+  const val = lab('', x, y + 60, 'val');
+  const arc = el.querySelector('.arc'), ptr = el.querySelector('.ptr');
+  on(() => { const n = S[key].getNormalisedValue(), a = -135 + 270 * n;
+    arc.setAttribute('d', n < 0.002 ? '' : `M${arcPt(-135, 41)} A41 41 0 ${a + 135 > 180 ? 1 : 0} 1 ${arcPt(a, 41)}`);
+    ptr.setAttribute('transform', `rotate(${a} 48 48)`); val.textContent = fmt(get(key)); });
+  let sy, sn;
+  el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); sy = e.clientY; sn = S[key].getNormalisedValue(); S[key].sliderDragStarted(); });
+  el.addEventListener('pointermove', e => { if (sy == null) return; const k = e.shiftKey ? 0.0008 : 0.006;
+    S[key].setNormalisedValue(Math.min(1, Math.max(0, sn + (sy - e.clientY) * k))); });
+  el.addEventListener('pointerup', () => { sy = null; S[key].sliderDragEnded(); });
+  el.addEventListener('dblclick', () => set(key, defs[key][2]));
+  el.addEventListener('wheel', e => { e.preventDefault(); S[key].setNormalisedValue(Math.min(1, Math.max(0, S[key].getNormalisedValue() - Math.sign(e.deltaY) * 0.01))); }, { passive: false });
+}
+lab('INPUT', 103, 265);              knob('inGain', 103, 235, db);
+lab('OUTPUT', 103, 452);             knob('outTrim', 103, 423, db);
+lab('OUTPUT<br>GAIN', 963, 242);     knob('outGain', 963, 235, db);
+lab('TONE', 963, 452);               knob('tone', 963, 423, v => Math.round(v * 100) + '%');
+lab('Low-Pass Filter', 963, 603, 'sub');
+
+/* ---------- pitch section ---------- */
+const mkLeds = x => { const l = put($('<div class="leds abs"><b></b><b></b><b></b></div>'), x, 229); return [...l.children]; };
+const dLeds = mkLeds(254 - 0), uLeds = mkLeds(813 - 0);
+const mkStep = (cls, x, txt) => put($(`<div class="step abs"><i class="${cls}"></i>${txt ? '<span></span>' : ''}</div>`), x, 365);
+const down = mkStep('d', 253, true), up = mkStep('u', 813, false);
+lab('DOWN', 253, 268); lab('UP', 813, 268); lab('ADJUST', 253, 476, 'small'); lab('ADJUST', 813, 476, 'small');
+const phase = put($('<div id="phase" class="abs">&Oslash;</div>'), 253, 552); lab('PHASE INVERT', 253, 603, 'small');
+phase.onclick = () => PH.setValue(!PH.getValue());
+const syncPhase = () => phase.classList.toggle('on', !!PH.getValue()); PH.valueChangedEvent.addListener(syncPhase); syncPhase();
+
+const stepBy = (dir, fine) => { const v = get('pitch'), e = 1e-6;
+  set('pitch', fine ? Math.round((v + dir * 0.1) * 10) / 10 : (dir > 0 ? Math.floor(v + e) + 1 : Math.ceil(v - e) - 1)); };
+for (const [el, dir] of [[down, -1], [up, 1]]) { let t, r;
+  el.addEventListener('pointerdown', e => { stepBy(dir, e.shiftKey); t = setTimeout(() => r = setInterval(() => stepBy(dir, e.shiftKey), 110), 420); });
+  for (const ev of ['pointerup', 'pointerleave']) el.addEventListener(ev, () => { clearTimeout(t); clearInterval(r); }); }
+
+const bezel = put($(`<div id="bezel" class="abs"><div id="meters"><span>Left</span><div class="m"></div><span>Right</span></div>
+  <div class="side" style="left:20px"><u></u></div><div class="side" style="right:20px"><u></u></div>
+  <div id="lcd"><i></i><div id="num"><span id="n">0.0</span><small>st</small></div><p>SEMITONES</p></div></div>`), 534, 254);
+const mw = bezel.querySelector('.m'); mw.innerHTML = '<s></s>'.repeat(32);
+const segs = [...mw.children], sides = [...bezel.querySelectorAll('.side u')];
+lab('PITCH', 533, 406).id = 'pitchlab';
+const lcd = bezel.querySelector('#lcd');
+lcd.addEventListener('dblclick', () => set('pitch', 0));
+lcd.addEventListener('wheel', e => { e.preventDefault(); stepBy(-Math.sign(e.deltaY), e.shiftKey); }, { passive: false });
+let ly, lv; lcd.addEventListener('pointerdown', e => { lcd.setPointerCapture(e.pointerId); ly = e.clientY; lv = get('pitch'); });
+lcd.addEventListener('pointermove', e => { if (ly != null) set('pitch', Math.round((lv + (ly - e.clientY) * (e.shiftKey ? 0.005 : 0.05)) * 100) / 100); });
+lcd.addEventListener('pointerup', () => ly = null);
+
+on(() => { const v = get('pitch'), r = Math.round(v * 10) / 10;
+  bezel.querySelector('#n').textContent = (r > 0 ? '+' : '') + r.toFixed(1);
+  down.querySelector('span').textContent = Math.max(0, -r).toFixed(1) + ' st';
+  const n = Math.min(3, Math.ceil(Math.abs(v) / 4 - 1e-6));
+  dLeds.forEach((l, i) => l.classList.toggle('on', v < 0 && i < n)); uLeds.forEach((l, i) => l.classList.toggle('on', v > 0 && i < n));
+  const h = Math.abs(v) / 12 * 78.5; sides.forEach(u => { u.style.height = h + 'px'; u.style.top = (v >= 0 ? 78.5 - h : 78.5) + 'px'; }); });
+
+/* meters: 16 segments per channel, -60..0 dBFS */
+if (hasJuce) window.__JUCE__.backend.addEventListener('meter', e => {
+  [e.l, e.r].forEach((lvl, ch) => { const n = Math.round(Math.max(0, Math.min(1, (20 * Math.log10(lvl + 1e-6) + 60) / 60)) * 16);
+    for (let i = 0; i < 16; i++) segs[ch * 16 + i].classList.toggle('on', i < n); }); });
+/* the two rows sit as a 2-row grid */
+mw.style.gridTemplateColumns = 'repeat(16,9px)'; mw.style.gridAutoFlow = 'row';
+
+/* ---------- presets / reset / midi ---------- */
+const presets = { Default: 0, 'Octave Up': 12, 'Fifth Up': 7, 'Major Third Up': 4, 'Minor Third Down': -3, 'Fourth Down': -5, 'Octave Down': -12 };
+const sel = document.getElementById('preset');
+Object.keys(presets).forEach(n => sel.add(new Option(n, n)));
+const resetAll = () => { for (const k in defs) set(k, defs[k][2]); PH.setValue(false); };
+sel.onchange = () => set('pitch', presets[sel.value]);
+document.getElementById('prev').onclick = () => { sel.selectedIndex = (sel.selectedIndex + sel.length - 1) % sel.length; sel.onchange(); };
+document.getElementById('reset').onclick = () => { resetAll(); sel.value = 'Default'; };
+document.getElementById('midi').onclick = e => e.currentTarget.classList.toggle('on');   // UI stub: MIDI mapping not wired yet
+</script></body></html>
