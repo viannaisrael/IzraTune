@@ -84,8 +84,21 @@ const put = (el, x, y) => { el.style.left = x + 'px'; el.style.top = (y - 82) + 
 const lab = (t, x, y, c = '') => put($(`<div class="lab ${c}">${t}</div>`), x, y);
 
 /* ---------- JUCE bridge (with a mock so the page previews in a normal browser) ---------- */
-const hasJuce = !!window.__JUCE__;
-const Juce = hasJuce ? await import('./juce_frontend.js') : null;
+/* on-screen diagnostics: any error is printed at the bottom of the panel */
+const dbg = document.createElement('pre');
+dbg.style.cssText = 'position:absolute;left:8px;right:8px;bottom:4px;z-index:9;font:12px monospace;color:#ff8a80;white-space:pre-wrap;pointer-events:none';
+P.appendChild(dbg);
+const report = m => { dbg.textContent += m + '\n'; };
+window.addEventListener('error', e => report('error: ' + e.message + ' (linha ' + e.lineno + ')'));
+window.addEventListener('unhandledrejection', e => report('promise: ' + (e.reason && e.reason.message || e.reason)));
+
+let Juce = null;
+if (window.__JUCE__) {
+  try { const m = await import('./juce_frontend.js'); Juce = m.getSliderState ? m : (m.default || window.Juce || null); }
+  catch (e) { report('import falhou: ' + e); }
+} else report('window.__JUCE__ ausente (modo prévia)');
+if (window.__JUCE__ && Juce && !Juce.getSliderState) { report('getSliderState nao encontrado. exports: ' + Object.keys(Juce)); Juce = null; }
+const hasJuce = !!Juce;
 const mockS = (a, b, d) => { let v = (d - a) / (b - a); const l = []; return { properties: { start: a, end: b }, getNormalisedValue: () => v,
   setNormalisedValue: x => { v = x; l.forEach(f => f()); }, sliderDragStarted() {}, sliderDragEnded() {}, valueChangedEvent: { addListener: f => l.push(f) } }; };
 const mockT = () => { let v = false; const l = []; return { getValue: () => v, setValue: x => { v = x; l.forEach(f => f()); }, valueChangedEvent: { addListener: f => l.push(f) } }; };
@@ -165,7 +178,7 @@ on(() => { const v = get('pitch'), r = Math.round(v * 10) / 10;
   const h = Math.abs(v) / 12 * 78.5; sides.forEach(u => { u.style.height = h + 'px'; u.style.top = (v >= 0 ? 78.5 - h : 78.5) + 'px'; }); });
 
 /* meters: 16 segments per channel, -60..0 dBFS */
-if (hasJuce) window.__JUCE__.backend.addEventListener('meter', e => {
+if (window.__JUCE__ && window.__JUCE__.backend) window.__JUCE__.backend.addEventListener('meter', e => {
   [e.l, e.r].forEach((lvl, ch) => { const n = Math.round(Math.max(0, Math.min(1, (20 * Math.log10(lvl + 1e-6) + 60) / 60)) * 16);
     for (let i = 0; i < 16; i++) segs[ch * 16 + i].classList.toggle('on', i < n); }); });
 /* the two rows sit as a 2-row grid */
